@@ -1,13 +1,17 @@
 <div align="center">
 
+<img src="https://github.com/aefotograph/AEQPro/raw/main/AEQPro/Assets.xcassets/AppIcon.appiconset/icon_512_2x.png" width="128" height="128" alt="AEQ Pro icon" />
+
 # AEQ Pro 🎚️
 
 ### A system-wide audio equalizer for macOS
 
 EQ everything your Mac plays — Safari, Music, games, anything — in real time.
-31 bands, genre presets, a Siri-inspired visualizer, and per-app routing.
+31 bands, smart auto-presets, four visualizers, two themes, per-app routing,
+and your own savable presets.
 
-*created by [aefotograph](https://www.aefotograph.art) 🇱🇰*
+*created by [aefotograph](https://www.aefotograph.art) 🇱🇰 · [Buy me a coffee ☕](https://buymeacoffee.com/aefotograph)*
+
 
 </div>
 
@@ -15,42 +19,128 @@ EQ everything your Mac plays — Safari, Music, games, anything — in real time
 
 ## ✨ Features
 
-- **System-wide EQ** — processes all macOS audio live using Core Audio process taps
-- **31-band graphic equalizer** with a draggable curve and ±12 dB range
-- **15 built-in presets** — Flat, Bass, Rock, Pop, Hip-Hop, EDM, Jazz, Classical, Acoustic, R&B, Latin, Vocal, Cinema, Air, and a custom **Baila 🇱🇰** preset tuned for Sri Lankan baila
-- **Siri-inspired visualizer** — three flowing, glowing waves driven by bass, mids, and treble
-- **Per-app routing** — send Safari to your headphones and Music to your speakers, at the same time
-- **Master controls** — preamplifier, amplifier, compressor, output gain, and auto gain protection (a built-in limiter that protects your ears and speakers)
-- **Output device selector** — AirPods, speakers, audio interfaces, anything your Mac sees
-- **True power toggle** — flip it off and your Mac's audio returns to normal instantly
-- **Clipping warning** and a live capture indicator
+### 🎛️ Equalizer
+- **31-band graphic EQ** with a draggable live curve and ±12 dB range
+- **17 built-in genre presets** — Hip-Hop, Jazz, Baila 🇱🇰, Arabic, Movies, Bass, Rock, Pop, EDM, Classical, Acoustic, R&B, Latin, Vocal, Cinema, Air, Flat
+- **Save your own presets** — dial in a curve, name it, it persists across launches
+- **Remember last preset** — reopens exactly where you left off
+
+### 🤖 Smart Auto Preset
+- Toggle **Auto Preset** on and the app detects what's playing every 2 seconds
+- **Video apps** (Safari, Chrome, Apple TV, Zoom, Teams, Discord) → **Movies** preset automatically
+- **Music apps** (Apple Music, Spotify, iTunes) → spectrum classifier picks the best match
+- Classifier reads live bass/mid/treble ratios — never falls back to Flat
+- Suggestion shown live: *"Detected: Rock"* or *"Movies (video detected)"*
+- Override anytime by tapping any preset pill
+
+### 🎨 Visualizers (1 / 2 / 3 / 4)
+- **Winamp classic** — retro segmented green/yellow/red bars with falling peak caps on black
+- **Oscilloscope** — glowing green waveform on a CRT-style grid
+- **Mirror bars** — gradient bars mirrored symmetrically from the center line
+- **Siri waves** — three flowing, glowing layered waves driven by bass, mids, treble
+
+### 🎨 Themes
+- **Dark** — minimal black and deep purple, easy on the eyes
+- **JET** — blue metallic inspired by JetAudio; navy gradients, cyan LCD accents, chrome borders
+
+### 🔊 Audio Engine
+- **System-wide capture** via Core Audio process taps — EQs everything your Mac plays
+- **Per-app routing** — send Safari to your headphones and Music to your speakers simultaneously
+- **Master controls** — preamplifier, amplifier, compressor, output gain
+- **Auto gain protection** — built-in peak limiter protects your ears and speakers
+- **Output device selector** — AirPods, built-in speakers, audio interfaces, anything macOS sees
+- **True power toggle** — off releases your Mac's audio instantly, no muting artefacts
+- **Clipping warning** and live capture indicator
+
+### ⚙️ System
+- **Launch at login** — starts silently on every login, always on
+- **Remembers everything** — last preset, auto-preset state, launch preference all survive restarts
+
+---
 
 ## 🖥️ Requirements
 
-- macOS 14.4 or newer (required for Core Audio process taps)
+- macOS **14.4 or newer** (required for Core Audio process taps)
 - The **System Audio Recording** permission (the app asks on first launch)
+- No App Sandbox — system-wide audio capture requires running unsandboxed
 
-## 🚀 Building from source
+---
 
-1. Open `AEQPro.xcodeproj` in Xcode
-2. Select the **AEQPro** target → **Signing & Capabilities** → set your team
-3. Make sure **Minimum Deployments** is set to macOS 14.4
-4. Build and run (⌘R)
-5. Allow the system-audio permission when prompted, then play any audio
+## 📦 Install
+
+1. Download the latest `.dmg` from [**Releases**](https://github.com/aefotograph/AEQPro/releases)
+2. Open it and drag **AEQ Pro** into your Applications folder
+3. **First launch:** right-click the app → **Open** to get past the macOS security warning
+4. Allow the **System Audio Recording** permission when prompted
+5. Play any audio — the green **Live** indicator confirms it's working
+
+---
+
+## 🛠️ Building from source
+
+```bash
+git clone https://github.com/aefotograph/AEQPro.git
+cd AEQPro
+open AEQPro.xcodeproj
+```
+
+1. Select the **AEQPro** target → **Signing & Capabilities** → set your Apple ID team
+2. **General** tab → set **Minimum Deployments** to macOS 14.4
+3. **Info** tab → confirm `NSAudioCaptureUsageDescription` key exists
+4. Build and run (**⌘R**) → allow permissions when prompted
+
+---
 
 ## 🎛️ How it works
 
-AEQ Pro creates a Core Audio process tap that captures system audio, mutes the
-original output, and replays it through an `AVAudioEngine` chain
-(EQ → compressor → limiter) to your chosen output device. A ring buffer bridges
-the low-level capture callback and the playback engine for stable, low-latency
-audio.
+```
+System Audio
+     │
+     ▼
+Core Audio Process Tap  ←── taps ALL Mac audio, mutes original
+     │
+     ▼
+IOProc Callback  ──►  Ring Buffer  ──►  AVAudioSourceNode
+                                              │
+                                              ▼
+                                    31-band AVAudioUnitEQ
+                                              │
+                                         Compressor
+                                              │
+                                     Peak Limiter (AGP)
+                                              │
+                                              ▼
+                                      Your Output Device
+```
 
-## ⚠️ Note
+A low-level `IOProc` callback captures audio from the tap into a lock-free stereo ring buffer. An `AVAudioSourceNode` reads from that buffer on the playback thread, feeding the EQ chain. Real-time FFT (Hann-windowed, 2048-point) drives the visualizer and auto-preset classifier simultaneously.
 
-This app is not sandboxed and is not notarized. When sharing the built app,
-other users may need to right-click → Open the first time, or enable it under
-**System Settings → Privacy & Security**.
+---
+
+## 🎵 Preset guide
+
+| Preset | Best for |
+|--------|----------|
+| **Movies** | Films, streaming, anything with dialogue and surround effects |
+| **Hip-Hop** | Heavy sub-bass tracks, trap, drill |
+| **Jazz** | Warm, acoustic, low centroid music |
+| **Baila 🇱🇰** | Sri Lankan baila — driving bass, conga punch, brass bite |
+| **Arabic** | Oud, darbuka, maqam vocals, qanun shimmer |
+| **Rock** | V-curve — big lows and highs, scooped mids |
+| **EDM** | Sub + sparkle, electronic dance |
+| **Classical** | Gentle smile curve, stays out of the music's way |
+| **Air** | Extreme high-shelf for bright, airy content |
+
+---
+
+## ⚠️ Notes
+
+- **Not notarized** — right-click → Open on first launch
+- **Not sandboxed** — system audio capture requires this
+- If your Mac goes silent after a crash, choose your output in Control Center → Sound
+- Safari is always treated as a video source; use Spotify desktop app for music-aware classification
+
+---
 
 ## 📄 License
 
@@ -59,5 +149,9 @@ MIT — do whatever you like, just keep the credit.
 ---
 
 <div align="center">
-<sub>Made with ☕ and 🎶 in Dubai</sub>
+
+Built at midnight in Dubai with ☕ and way too much baila 🇱🇰
+
+**[Download](https://github.com/aefotograph/AEQPro/releases) · [Buy me a coffee](https://buymeacoffee.com/aefotograph) · [aefotograph.art](https://www.aefotograph.art)**
+
 </div>
